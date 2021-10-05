@@ -9,12 +9,9 @@
 struct Movie {
     char title[50];
     int year;
-    char* languages[10];
+    char languages[10][50];
     float rating;
 };
-
-short lastOccurrence(char[], char);
-char* getLanguagesStr(char[]);
 
 int main() {
     char const* csvPath = "data/movies_sample_1.csv";
@@ -25,7 +22,7 @@ int main() {
     }
 
     struct Movie movies[50]; 
-    char line[300];
+    char line[1000];
     unsigned short row = 0;
 
     while (fgets(line, sizeof(line), movies_csv)) {
@@ -35,60 +32,48 @@ int main() {
         }
 
         struct Movie movie;
-        const char delim[2] = ",";
-        char* token;
+        const char *delim = ",";
+        char *token;
         unsigned short col = 0;
 
         token = strtok(line, delim);
         while (token != NULL) {
-            switch (col) {
-                case 0:
-                    strcpy(movie.title, token);
-                    break;
-                case 1:
-                    movie.year = atoi(token);
-                    break;
-                case 2:
-                    const char languageDelim[2] = ";";
-                    char* languagesStr = getLanguagesStr(token);
-                    char* language =  strtok(languagesStr, languageDelim);
-                    unsigned short languageIndex = 0;
-                    while (language != NULL) {
-                        movies->languages[languageIndex] = language;
-                        languageIndex++;
-                    }
-                    break;
-                case 3:
-                    movie.rating = atof(token);
-                    break;
+            if (col == 0) {
+                strcpy(movie.title, token);
+            } else if (col == 1) {
+                movie.year = atoi(token);
+            } else if (col == 2) {
+                char languages[500];
+                for (int i = 1; i < strlen(token) - 1; i++) { // Remove brackets
+                    languages[i] = token[i];
+                }
+
+                const char *langDelim = ";";
+                char *language = strtok(languages, langDelim);
+                unsigned short langIndex = 0;
+                while (language != NULL) {
+                    strcpy(movie.languages[langIndex], language);
+                    langIndex++;
+                }
+            } else if (col == 3) {
+                movie.rating = atof(token);
             }
 
             token = strtok(NULL, delim);
+            col++;
         }
+        movies[row] = movie;
         row++;
     }
 
-    printf("Movie: %s \n Year: %d \n Rating %f", movies[0].title, movies[0].year, movies[0].rating);
-
+    printf("Movie Name: %s", movies[0].title);
+    // printf("Year: %d", movies[0].year);
+    // printf("Languages: ");
+    // for (int i = 0; i < 10; i++) {
+    //     if (strlen(movies[0].languages[i]) > 0) {
+    //         printf("%s\n", movies[0].languages[i]);
+    //     }
+    // }
+    // printf("Rating: %f\n\n", movies[0].rating);
     return 0;
-}
-
-short lastOccurrence(char str[], char ch) {
-    short index = -1;
-    for (int i = 0; i < strlen(&str); i++) {
-        if (&str[i] == ch) {
-            index = i;
-        }
-    }
-    return index;
-}
-
-char* getLanguagesStr(char* token) {
-    char languagesStr[200];
-    for (int i = 0; i < strlen(token) - 1; i++) {
-        if (i != 0) {
-            languagesStr[i] = token[i];
-        }
-    }
-    return languagesStr;
 }
