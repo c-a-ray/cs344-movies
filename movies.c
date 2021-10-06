@@ -2,10 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MAX_ROWS 50;
-#define MAX_ROW_LEN 300;
-#define MAX_COLS 5;
-
 struct Movie {
     char title[50];
     int year;
@@ -13,70 +9,100 @@ struct Movie {
     float rating;
 };
 
+struct Node {
+    struct Movie *movie;
+    struct Node *next;
+};
+
+struct Node *processFile(char*);
+struct Movie *createMovie(char*, int);
+void printMovie(struct Movie*);
+void printMovieList(struct Node*);
+
 int main() {
-    char const* csvPath = "data/movies_sample_1.csv";
-    // char *csvPath;
-    // printf("Enter path to CSV: ");
-    // scanf("%s", csvPath);
+    char *filepath = "data/movies_sample_1.csv";
+    struct Node *list = processFile(filepath);
+    printMovieList(list);
+    return EXIT_SUCCESS;
+}
 
-    FILE* movies_csv = fopen(csvPath, "r");
-    if (movies_csv == NULL) {
-        perror("Unable to open CSV file");
-        return 1;
-    }
+struct Node *processFile(char *filepath) {
+    FILE *moviesCSV = fopen(filepath, "r");
 
-    struct Movie movies[50]; 
-    char line[1000];
-    unsigned short row = 0;
+    char *line = NULL;
+    struct Node *head = NULL;
+    struct Node *tail = NULL;
+    int row = 0;
 
-    while (fgets(line, sizeof(line), movies_csv)) {
-        if (row == 0) { // Skip header
+    while (fgets(line, sizeof(line), moviesCSV)) {
+        if (row == 0) {
             row++;
             continue;
         }
 
-        struct Movie movie;
-        const char *delim = ",";
-        char *token;
-        unsigned short col = 0;
+        struct Node *newNode;
+        newNode->movie = createMovie(line, row);
+        newNode->next = NULL;
 
-        token = strtok(line, delim);
-        while (token != NULL) {
-            if (col == 0) {
-                strcpy(movie.title, token);
-            } else if (col == 1) {
-                movie.year = atoi(token);
-            } else if (col == 2) {
-                int languagesIdx = 0;
-                int langIdx = 0;
-                for (int i = 1; i < strlen(token); i++) {
-                    if (token[i] == ';') {
-                        langIdx = 0;
-                        languagesIdx++;
-                    } else if (token[i] != ']') {
-                        movie.languages[languagesIdx][langIdx] = token[i];
-                        langIdx++;
-                    }
-                }
-            } else if (col == 3) {
-                movie.rating = atof(token);
-            }
-
-            token = strtok(NULL, delim);
-            col++;
+        if (head == NULL) {
+            head = newNode;
+            tail = newNode;
+        } else {
+            tail->next = newNode;
+            tail = newNode;
         }
-        movies[row - 1] = movie;
         row++;
     }
+    free(line);
+    fclose(moviesCSV);
+    return head;
+}
 
-    printf("Movie Name: %s\n", movies[0].title);
-    printf("Year: %d\n", movies[0].year);
+struct Movie *createMovie(char *line, int row) {
+    struct Movie *movie = malloc(sizeof(struct Movie));
+    char *token = strtok(line, ",");
+    int col = 0;
+    while (token != NULL) {
+        if (col == 0) {
+            strcpy(movie->title, token);
+        } else if (col == 1) {
+            movie->year = atoi(token);
+        } else if (col == 2) {
+            int languagesIdx = 0;
+            int langIdx = 0;
+            for (int i = 1; i < strlen(token); i++) {
+                if (token[i] == ';') {
+                    langIdx = 0;
+                    languagesIdx++;
+                } else if (token[i] != ']') {
+                    movie->languages[languagesIdx][langIdx] = token[i];
+                    langIdx++;
+                }
+            }
+        } else if (col == 3) {
+            movie->rating = atof(token);
+        }
+        token = strtok(NULL, ",");
+        col++;
+    }
+    return movie;
+}
+
+void printMovie(struct Movie *movie)  {
+    printf("Title: %s\n", movie->title);
+    printf("Year: %d\n", movie->year);
     printf("Languages: ");
     for (int i = 0; i < 10; i++) {
-        if (strlen(movies[0].languages[i]) > 0) {
-            printf("%s\t", movies[0].languages[i]);
+        if (strlen(movie->languages[i]) > 0) {
+            printf("%s\t", movie->languages[i]);
         }
     }
-    printf("\nRating: %f\n", movies[0].rating);
-    return 0;
+    printf("\nRating: %2f\n\n", movie->rating);
+}
+
+void printMovieList(struct Node *list) {
+    while (list != NULL) {
+        printMovie(list->movie);
+        list = list->next;
+    }
 }
