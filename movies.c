@@ -4,6 +4,8 @@
 
 #define MAX_LANGUAGES 5
 #define MAX_LANG_LEN 20
+#define MIN_YEAR 1990
+#define MAX_YEAR 2021
 
 struct Movie
 {
@@ -15,13 +17,15 @@ struct Movie
 };
 
 char *getFilepath(int, char **);
-struct Movie *processFile(char *, int *);
+struct Movie *processFile(char *, int *, int *, int *);
 struct Movie *createMovie(char *);
 void parseLanguages(struct Movie *, char *);
 int getQueryOption(void);
 void printOptions(void);
-void runQueryOption(struct Movie *, int);
+void runQueryOption(struct Movie *, int, int, int);
 void printMoviesWithYear(struct Movie *, int);
+void printHighestRatedMovies(struct Movie *, int, int);
+void printMoviesWithLanguage(struct Movie *, char[]);
 
 int main(int argc, char *argv[])
 {
@@ -32,7 +36,9 @@ int main(int argc, char *argv[])
     }
 
     int totalMovies;
-    struct Movie *list = processFile(filepath, &totalMovies);
+    int minYear = MAX_YEAR;
+    int maxYear = MIN_YEAR;
+    struct Movie *list = processFile(filepath, &totalMovies, &minYear, &maxYear);
 
     printf("Processed file %s and parsed data for %d movies\n\n", filepath, totalMovies);
 
@@ -40,7 +46,7 @@ int main(int argc, char *argv[])
     do
     {
         queryOption = getQueryOption();
-        runQueryOption(list, queryOption);
+        runQueryOption(list, queryOption, minYear, maxYear);
     } while (queryOption != 4);
 
     printf("Exiting\n");
@@ -63,7 +69,7 @@ char *getFilepath(int argc, char **argv)
     return filepath;
 }
 
-struct Movie *processFile(char *filepath, int *totalMovies)
+struct Movie *processFile(char *filepath, int *totalMovies, int *minYear, int *maxYear)
 {
     FILE *moviesCSV = fopen(filepath, "r");
 
@@ -78,17 +84,26 @@ struct Movie *processFile(char *filepath, int *totalMovies)
     {
         if (row > 0)
         {
-            struct Movie *newNode = createMovie(line);
+            struct Movie *newMovie = createMovie(line);
 
             if (head == NULL)
             {
-                head = newNode;
-                tail = newNode;
+                head = newMovie;
+                tail = newMovie;
             }
             else
             {
-                tail->next = newNode;
-                tail = newNode;
+                tail->next = newMovie;
+                tail = newMovie;
+            }
+
+            if (newMovie->year < *minYear)
+            {
+                *minYear = newMovie->year;
+            }
+            if (newMovie->year > *maxYear)
+            {
+                *maxYear = newMovie->year;
             }
         }
         row++;
@@ -174,7 +189,7 @@ void printOptions(void)
     printf("Enter a choice from 1 to 4: ");
 }
 
-void runQueryOption(struct Movie *list, int queryOption)
+void runQueryOption(struct Movie *list, int queryOption, int minYear, int maxYear)
 {
     if (queryOption == 1)
     {
@@ -182,6 +197,17 @@ void runQueryOption(struct Movie *list, int queryOption)
         int year;
         scanf("%d", &year);
         printMoviesWithYear(list, year);
+    }
+    else if (queryOption == 2)
+    {
+        printHighestRatedMovies(list, minYear, maxYear);
+    }
+    else if (queryOption == 3)
+    {
+        printf("Enter the language for which you want to see movies: ");
+        char language[MAX_LANG_LEN];
+        scanf("%s", language);
+        printMoviesWithLanguage(list, language);
     }
 }
 
@@ -204,4 +230,60 @@ void printMoviesWithYear(struct Movie *list, int year)
     }
     printf("\n\n");
     list = head;
+}
+
+void printHighestRatedMovies(struct Movie *list, int minYear, int maxYear)
+{
+    struct Movie *head = list;
+
+    for (int year = minYear; year < maxYear; year++)
+    {
+        struct Movie *highestRated;
+        highestRated->rating = 0;
+        while (list != NULL)
+        {
+            if (list->year == year && list->rating > highestRated->rating)
+            {
+                highestRated = list;
+            }
+            list = list->next;
+        }
+
+        if (highestRated->rating > 0)
+        {
+            printf("%d %g %s\n", highestRated->year, highestRated->rating, highestRated->title);
+        }
+        list = head;
+    }
+    printf("\n\n");
+    return;
+}
+
+void printMoviesWithLanguage(struct Movie *list, char language[])
+{
+    struct Movie *head = list;
+    int nMoviesWithLanguage = 0;
+
+    while (list != NULL)
+    {
+        for (int i = 0; i < MAX_LANGUAGES; i++)
+        {
+            if (strcmp(list->languages[i], language) == 0)
+            {
+                printf("%d %s\n", list->year, list->title);
+                nMoviesWithLanguage++;
+                break;
+            }
+        }
+        list = list->next;
+    }
+
+    if (nMoviesWithLanguage == 0)
+    {
+        printf("No data about movies released in %s\n", language);
+    }
+    printf("\n");
+
+    list = head;
+    return;
 }
