@@ -252,7 +252,7 @@ void printHighestRatedMovies(struct movie *list, int minYear, int maxYear)
 
         if (highestRated.rating > 0)
         {
-            printf("%d %g %s\n", highestRated.year, highestRated.rating, highestRated.title);
+            printf("%d %.1f %s\n", highestRated.year, highestRated.rating, highestRated.title);
         }
         list = head;
     }
