@@ -2,17 +2,21 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define MAX_LANGUAGES 5
+#define MAX_LANG_LEN 20
+
 struct Movie
 {
-    char title[50];
+    char *title;
     int year;
-    char languages[10][50];
+    char languages[MAX_LANGUAGES][MAX_LANG_LEN];
     float rating;
     struct Movie *next;
 };
 
 struct Movie *processFile(char *, int *);
 struct Movie *createMovie(char *);
+void parseLanguages(struct Movie *, char *);
 void printMovie(struct Movie *);
 void printMovieList(struct Movie *, int);
 
@@ -64,12 +68,15 @@ struct Movie *processFile(char *filepath, int *totalMovies)
 struct Movie *createMovie(char *line)
 {
     struct Movie *movie = malloc(sizeof(struct Movie));
-    char *token = strtok(line, ",");
+    char *saveptr;
+
+    char *token = strtok_r(line, ",", &saveptr);
     int col = 0;
     while (token != NULL)
     {
         if (col == 0)
         {
+            movie->title = calloc(strlen(token) + 1, sizeof(char));
             strcpy(movie->title, token);
         }
         else if (col == 1)
@@ -78,31 +85,36 @@ struct Movie *createMovie(char *line)
         }
         else if (col == 2)
         {
-            int languagesIdx = 0;
-            int langIdx = 0;
-            for (int i = 1; i < strlen(token); i++)
-            {
-                if (token[i] == ';')
-                {
-                    langIdx = 0;
-                    languagesIdx++;
-                }
-                else if (token[i] != ']')
-                {
-                    movie->languages[languagesIdx][langIdx] = token[i];
-                    langIdx++;
-                }
-            }
+            parseLanguages(movie, token);
         }
         else if (col == 3)
         {
             movie->rating = atof(token);
         }
-        token = strtok(NULL, ",");
+        token = strtok_r(NULL, ",", &saveptr);
         col++;
     }
     movie->next = NULL;
     return movie;
+}
+
+void parseLanguages(struct Movie *movie, char *token)
+{
+    int languagesIdx = 0;
+    int langIdx = 0;
+    for (int tokenIdx = 1; tokenIdx < strlen(token) - 1; tokenIdx++)
+    {
+        if (token[tokenIdx] == ';')
+        {
+            langIdx = 0;
+            languagesIdx++;
+        }
+        else
+        {
+            movie->languages[languagesIdx][langIdx] = token[tokenIdx];
+            langIdx++;
+        }
+    }
 }
 
 void printMovie(struct Movie *movie)
@@ -110,7 +122,7 @@ void printMovie(struct Movie *movie)
     printf("Title: %s\n", movie->title);
     printf("Year: %d\n", movie->year);
     printf("Languages: ");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < MAX_LANGUAGES; i++)
     {
         if (strlen(movie->languages[i]) > 0)
         {
