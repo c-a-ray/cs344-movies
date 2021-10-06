@@ -57,7 +57,7 @@ struct Movie *processFile(char *filepath, int *totalMovies)
     }
     free(line);
     fclose(moviesCSV);
-    *totalMovies = row;
+    *totalMovies = row - 1;
     return head;
 }
 
