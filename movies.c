@@ -18,10 +18,9 @@ char *getFilepath(int, char **);
 struct Movie *processFile(char *, int *);
 struct Movie *createMovie(char *);
 void parseLanguages(struct Movie *, char *);
-void printMovie(struct Movie *);
-void printMovieList(struct Movie *, int);
 int getQueryOption(void);
 void printOptions(void);
+void runQueryOption(struct Movie *, int);
 void printMoviesWithYear(struct Movie *, int);
 
 int main(int argc, char *argv[])
@@ -37,10 +36,15 @@ int main(int argc, char *argv[])
 
     printf("Processed file %s and parsed data for %d movies\n\n", filepath, totalMovies);
 
-    int queryOption = getQueryOption();
-    printf("%d is avalid option\n", queryOption);
+    int queryOption;
+    do
+    {
+        queryOption = getQueryOption();
+        runQueryOption(list, queryOption);
+    } while (queryOption != 4);
 
-    // printMovieList(list, totalMovies);
+    printf("Exiting\n");
+
     return EXIT_SUCCESS;
 }
 
@@ -147,41 +151,17 @@ void parseLanguages(struct Movie *movie, char *token)
     }
 }
 
-void printMovie(struct Movie *movie)
-{
-    printf("Title: %s\n", movie->title);
-    printf("Year: %d\n", movie->year);
-    printf("Languages: ");
-    for (int i = 0; i < MAX_LANGUAGES; i++)
-    {
-        if (strlen(movie->languages[i]) > 0)
-        {
-            printf("%s\t", movie->languages[i]);
-        }
-    }
-    printf("\nRating: %g\n\n", movie->rating);
-}
-
-void printMovieList(struct Movie *list, int totalMovies)
-{
-    printf("Processed %d movies...\n\n", totalMovies);
-    while (list != NULL)
-    {
-        printMovie(list);
-        list = list->next;
-    }
-}
-
 int getQueryOption(void)
 {
     int option;
-    do
+    printOptions();
+    scanf("%d", &option);
+    while (option < 1 || option > 4)
     {
+        printf("You entered an incorrect choice. Try again.\n\n");
         printOptions();
         scanf("%d", &option);
-        printf("\n\n");
-    } while (option < 1 || option > 4);
-
+    }
     return option;
 }
 
@@ -190,12 +170,24 @@ void printOptions(void)
     printf("1. Show movies released in the specified year\n");
     printf("2. Show highest rate movie for each year\n");
     printf("3. Show the title and year of release of all movies in a specific language\n");
-    printf("4. Exit from the program\n");
+    printf("4. Exit from the program\n\n");
     printf("Enter a choice from 1 to 4: ");
+}
+
+void runQueryOption(struct Movie *list, int queryOption)
+{
+    if (queryOption == 1)
+    {
+        printf("Enter the year for which you want to see movies: ");
+        int year;
+        scanf("%d", &year);
+        printMoviesWithYear(list, year);
+    }
 }
 
 void printMoviesWithYear(struct Movie *list, int year)
 {
+    struct Movie *head = list;
     int nMoviesWithYear = 0;
     while (list != NULL)
     {
@@ -204,9 +196,12 @@ void printMoviesWithYear(struct Movie *list, int year)
             printf("%s\n", list->title);
             nMoviesWithYear++;
         }
+        list = list->next;
     }
     if (nMoviesWithYear == 0)
     {
-        printf("No data about movies released in year %d\n\n", year);
+        printf("No data about movies released in year %d", year);
     }
+    printf("\n\n");
+    list = head;
 }
