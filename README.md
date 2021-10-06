@@ -8,5 +8,5 @@
 ### To run executable
 
 - cd to project directory (cs344-movies)
-  - Replace `./path/to/movies_csv` with the path to the data file
+  - In the following command, replace `./path/to/movies_csv` with the path to the data file
 - Run `./movies ./path/to/movies_csv`
